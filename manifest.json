@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Coordenadas GPS con clic derecho",
   "version": "1.5",
-  "description": "Copiado de coordenadas de Maps y Command",
+  "description": "Copiado de coordenadas Command y Traffilog",
   "permissions": [
     "clipboardWrite",
     "activeTab",
