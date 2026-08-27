@@ -5,3 +5,4 @@
     Se implementa en un tiempo de 1 segundo para dar clic derecho con un timer de 800 ms
     En caso de no detectar un 2do clic se copian las coordenadas
     Al detectarse un 2do clic se copea la url predefinida de maps de Google adjuntando las coordenadas en la url.
+2.0 Se agrega función de borrado de codigo id=div"missingCredential" en COMMAND VIEJO para eliminar banner de licencia 
