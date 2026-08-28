@@ -1,4 +1,6 @@
-// Variables para controlar el tiempo y la cantidad de clics
+// =========================================================================
+// FUNCIÓN 1: EXTRACCIÓN DE COORDENADAS Y URL (CLIC Y DOBLE CLIC)
+// =========================================================================
 let contadorClicsDerechos = 0;
 let temporizadorClics = null;
 
@@ -9,36 +11,32 @@ window.addEventListener('mousedown', function(event) {
         const elementoClickeado = event.target;
 
         if (contadorClicsDerechos === 1) {
-            // Iniciar el temporizador de 800ms (menos de 1 segundo)
+            // Iniciar el temporizador de 800ms
             temporizadorClics = setTimeout(() => {
-                // Si el tiempo se acaba y solo hubo 1 clic
                 extraerYCopiarCoordenadas(elementoClickeado, 'coordenadas');
-                contadorClicsDerechos = 0; // Reiniciar contador
+                contadorClicsDerechos = 0; 
             }, 800); 
         } else if (contadorClicsDerechos === 2) {
-            // Si hubo un segundo clic antes de que terminaran los 800ms
-            clearTimeout(temporizadorClics); // Cancelar la orden del primer clic
+            // Doble clic detectado
+            clearTimeout(temporizadorClics); 
             extraerYCopiarCoordenadas(elementoClickeado, 'url');
-            contadorClicsDerechos = 0; // Reiniciar contador
+            contadorClicsDerechos = 0; 
         }
     }
-}, true); // true = Fase de captura
+}, true);
 
 function extraerYCopiarCoordenadas(elementoClickeado, formato) {
     let lat = null;
     let lng = null;
     let textoAAnalizar = "";
 
-    // Estrategia 1: Globo Leaflet/Omnitracs
     const globoLeaflet = document.querySelector('.leaflet-popup-content');
     if (globoLeaflet) {
         textoAAnalizar = globoLeaflet.textContent;
     } else if (elementoClickeado && elementoClickeado.textContent) {
-        // Estrategia 2: Texto del elemento clickeado
         textoAAnalizar = elementoClickeado.textContent;
     }
 
-    // Extracción de números con RegEx
     if (textoAAnalizar) {
         const matchTexto = textoAAnalizar.match(/(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
         if (matchTexto) {
@@ -47,7 +45,6 @@ function extraerYCopiarCoordenadas(elementoClickeado, formato) {
         }
     }
 
-    // Estrategia 3: Buscar en la URL o enlaces ocultos de Google Maps
     if (!lat || !lng) {
         const urlMatches = window.location.href.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
         const mapLink = document.querySelector('a[href*="maps.google.com/maps"]');
@@ -62,7 +59,6 @@ function extraerYCopiarCoordenadas(elementoClickeado, formato) {
         }
     }
 
-    // Si encontramos las coordenadas, procedemos a copiar
     if (lat && lng) {
         let textoFinal = "";
         let mensajeToast = "";
@@ -79,11 +75,9 @@ function extraerYCopiarCoordenadas(elementoClickeado, formato) {
     }
 }
 
-// Método de copiado clásico y seguro
 function forzarCopiado(texto, mensaje) {
     const textareaTemporal = document.createElement('textarea');
     textareaTemporal.value = texto;
-    // Ocultar el textarea de la vista
     textareaTemporal.style.position = 'fixed';
     textareaTemporal.style.top = '-9999px';
     textareaTemporal.style.left = '-9999px';
@@ -103,7 +97,6 @@ function forzarCopiado(texto, mensaje) {
     }
 }
 
-// Interfaz visual rápida
 function mostrarNotificacion(texto) {
     const idNotificacion = 'gps-plugin-notificacion';
     let divExistente = document.getElementById(idNotificacion);
@@ -139,3 +132,30 @@ function mostrarNotificacion(texto) {
         }
     }, 3000);
 }
+
+// =========================================================================
+// FUNCIÓN 2: ELIMINACIÓN AUTOMÁTICA DEL BANNER DE CREDENCIALES
+// =========================================================================
+function eliminarBannerCredenciales() {
+    const banner = document.getElementById('missingCredential');
+    if (banner) {
+        banner.remove();
+        console.log("Plugin GPS: Elemento 'missingCredential' eliminado.");
+    }
+}
+
+// Ejecutar inmediatamente por si el elemento carga estáticamente
+eliminarBannerCredenciales();
+
+// Crear un observador para detectar si la plataforma lo inyecta dinámicamente
+const observadorDOM = new MutationObserver(() => {
+    eliminarBannerCredenciales();
+});
+
+// Iniciar la observación del DOM cuando el body esté disponible
+const iniciarObservador = setInterval(() => {
+    if (document.body) {
+        observadorDOM.observe(document.body, { childList: true, subtree: true });
+        clearInterval(iniciarObservador);
+    }
+}, 100);
