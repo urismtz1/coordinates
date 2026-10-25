@@ -1,0 +1,5 @@
+/* Oculta la barra "The specified credentials are invalid..." que Bing Maps
+   muestra a mitad del mapa en Omnitracs cuando la clave de Bing no es válida */
+.MicrosoftMap #missingCredential {
+    display: none !important;
+}

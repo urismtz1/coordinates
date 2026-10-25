@@ -1,17 +1,38 @@
 {
   "manifest_version": 3,
   "name": "Coordenadas GPS con clic derecho",
-  "version": "2.0",
-  "description": "Copiado de coordenadas Command y traffilog, con bloqueador de banner de licencia",
+  "version": "2.1",
+  "description": "Copiado de coordenadas Command y Traffilog, con bloqueador de banner de licencia y pegado con tecla o rueda del mouse",
   "permissions": [
     "clipboardWrite",
+    "clipboardRead",
+    "storage",
     "activeTab",
     "scripting"
   ],
+  "action": {
+    "default_title": "Configuración de pegado",
+    "default_popup": "opciones.html"
+  },
+  "options_ui": {
+    "page": "opciones.html",
+    "open_in_tab": false
+  },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "*://*.omnitracs.com/*",
+        "https://mx.traffilog.com/*",
+        "https://www.google.com/maps*",
+        "https://www.google.com.mx/maps*"
+      ],
       "js": ["content.js"],
+      "css": ["ocultar-aviso-bing.css"],
+      "all_frames": true
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["configuracion.js", "pegar.js"],
       "all_frames": true
     }
   ]

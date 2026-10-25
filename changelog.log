@@ -6,3 +6,8 @@
     En caso de no detectar un 2do clic se copian las coordenadas
     Al detectarse un 2do clic se copea la url predefinida de maps de Google adjuntando las coordenadas en la url.
 2.0 Se agrega función de borrado de codigo id=div"missingCredential" en COMMAND VIEJO para eliminar banner de licencia 
+2.1 Se limita el funcionamiento a COMMAND (*.omnitracs.com), Traffilog (mx.traffilog.com) y Google Maps
+    Se agrega la lectura del globo infowindow_XXXXX de COMMAND VIEJO, tomando solo el globo visible en pantalla
+    El banner missingCredential ahora se oculta con CSS (ocultar-aviso-bing.css) en lugar del observador
+    Se agrega el pegado del portapapeles en cualquier página con una tecla (AltGr por defecto, 2 pulsaciones rápidas) o con el botón central del mouse
+    Se agrega una ventana de configuración desde el ícono de la extensión para elegir la tecla, el mouse y la doble pulsación

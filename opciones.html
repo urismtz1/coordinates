@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Configuración de pegado</title>
+<style>
+  :root {
+    --fondo: #ffffff;
+    --texto: #1f2328;
+    --texto-suave: #59636e;
+    --borde: #d0d7de;
+    --fondo-tecla: #f3f5f7;
+    --acento: #2196F3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fondo: #1f2328;
+      --texto: #e6edf3;
+      --texto-suave: #9198a1;
+      --borde: #3d444d;
+      --fondo-tecla: #2d333b;
+    }
+  }
+  body {
+    margin: 0;
+    padding: 16px;
+    width: 300px;
+    background: var(--fondo);
+    color: var(--texto);
+    font: 14px/1.4 system-ui, sans-serif;
+  }
+  h1 { margin: 0 0 12px; font-size: 16px; }
+  fieldset { margin: 0 0 8px; padding: 0; border: 0; }
+  legend { margin-bottom: 4px; padding: 0; font-weight: 600; }
+  .opcion { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; }
+  input { margin: 0; accent-color: var(--acento); }
+  .tecla { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px 22px; }
+  .tecla.inactiva { opacity: .45; }
+  .tecla-actual {
+    min-width: 56px;
+    padding: 3px 10px;
+    border: 1px solid var(--borde);
+    border-bottom-width: 3px;
+    border-radius: 6px;
+    background: var(--fondo-tecla);
+    font-weight: 600;
+    text-align: center;
+  }
+  .tecla-actual.capturando { border-color: var(--acento); color: var(--acento); }
+  button {
+    padding: 4px 10px;
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) { border-color: var(--acento); }
+  button:disabled { cursor: default; }
+  .ayuda { margin: 12px 0 0; color: var(--texto-suave); font-size: 12px; }
+  .estado { min-height: 1.4em; margin: 6px 0 0; color: var(--acento); font-size: 12px; font-weight: 600; }
+</style>
+</head>
+<body>
+  <h1>Pegado de coordenadas</h1>
+
+  <fieldset>
+    <legend>Pegar con</legend>
+    <label class="opcion"><input type="radio" name="disparador" value="tecla"> Una tecla</label>
+    <div class="tecla" id="seccion-tecla">
+      <span class="tecla-actual" id="nombre-tecla">AltGr</span>
+      <button type="button" id="cambiar-tecla">Cambiar tecla</button>
+    </div>
+    <label class="opcion"><input type="radio" name="disparador" value="mouse"> Botón central del mouse (rueda)</label>
+  </fieldset>
+
+  <label class="opcion"><input type="checkbox" id="doble-pulsacion"> Presionar 2 veces rápido para pegar</label>
+
+  <p class="ayuda" id="ayuda"></p>
+  <p class="estado" id="estado" aria-live="polite"></p>
+
+  <script src="configuracion.js"></script>
+  <script src="opciones.js"></script>
+</body>
+</html>
