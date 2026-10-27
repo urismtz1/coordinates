@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Coordenadas GPS con clic derecho",
-  "version": "2.2",
+  "version": "2.3",
   "description": "Copiado de coordenadas Command y Traffilog, con bloqueador de banner de licencia y pegado con tecla o rueda del mouse",
   "permissions": [
     "clipboardWrite",

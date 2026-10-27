@@ -15,3 +15,4 @@
     Se desbloquea Ctrl+V, Shift+Insert y Pegar del clic derecho en los cuadros de texto donde la página no deja pegar
     Se agrega la opción "Forzar Ctrl+V donde no dejan pegar" en la configuración (activada por defecto)
     El pegado se carga al inicio de la página y también en recuadros (iframes) sin dirección, como algunos editores de correo
+2.3 El atajo de pegado ahora funciona en campos dentro de componentes con Shadow DOM cerrado

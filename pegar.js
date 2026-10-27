@@ -154,21 +154,34 @@ function estadoDelCuadro(campo) {
 
 function obtenerCampoActual() {
     let campo = document.activeElement;
-    // Si el foco está dentro de un componente con Shadow DOM, bajar hasta el campo real
-    while (campo && campo.shadowRoot && campo.shadowRoot.activeElement) {
-        campo = campo.shadowRoot.activeElement;
+    // Si el foco está dentro de un componente con Shadow DOM (abierto o cerrado), bajar hasta el campo real
+    let raiz;
+    while (campo && (raiz = raizDeSombra(campo)) && raiz.activeElement) {
+        campo = raiz.activeElement;
     }
     return esCampoDeTexto(campo) ? campo : null;
 }
 
 function campoBajoElCursor(event) {
     let elemento = event.composedPath()[0];
+    // En un Shadow DOM cerrado la ruta del evento se detiene en el componente: bajar hasta el campo bajo el cursor
+    let raiz;
+    while (elemento && !esCampoDeTexto(elemento) && (raiz = raizDeSombra(elemento))) {
+        const interior = raiz.elementFromPoint(event.clientX, event.clientY);
+        if (!interior || interior === elemento) break;
+        elemento = interior;
+    }
     if (!esCampoDeTexto(elemento)) return null;
     // En un editor (contenteditable) enfocar el contenedor editable, no el texto interno
     while (elemento.isContentEditable && elemento.parentElement && elemento.parentElement.isContentEditable) {
         elemento = elemento.parentElement;
     }
     return elemento;
+}
+
+// chrome.dom permite a la extensión ver también los Shadow DOM cerrados
+function raizDeSombra(elemento) {
+    return chrome.dom.openOrClosedShadowRoot(elemento);
 }
 
 function pegarEn(campo) {
