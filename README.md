@@ -5,10 +5,12 @@ Este es un plugin ligero para Google Chrome (Manifest V3) diseñado para extraer
 ## Características Principales
 
 * **Extracción Inteligente:** Identifica contenedores de mapas como Leaflet (`.leaflet-popup-content`), el globo de la versión anterior de Omnitracs (`div id="infowindow_XXXXX"`) o Google Maps y extrae las coordenadas contenidas en el texto visible.
-* **Pegado con atajo:** En cualquier página pega el portapapeles (por ejemplo, la coordenada copiada) en un cuadro de texto. Por defecto se presiona `AltGr` 2 veces rápido; las combinaciones como `AltGr+Q` (@) siguen funcionando normalmente.
+* **Pegado con atajo:** En cualquier página pega el portapapeles (por ejemplo, la coordenada copiada) en un cuadro de texto. Por defecto se presiona `AltGr` 2 veces rápido; las combinaciones como `AltGr+Q` (@) siguen funcionando normalmente. El texto se escribe como si se tecleara, así que funciona aunque la página no deje pegar, también en editores dentro de recuadros (iframes).
+* **Ctrl+V en páginas que no dejan pegar:** Si una página bloquea el pegado en un cuadro de texto (con `Ctrl+V`, `Shift+Insert` o *Pegar* del menú del clic derecho), la extensión escribe el texto de todas formas. Primero deja que la página pegue a su manera (por ejemplo, repartir un código en varios cuadros) y solo interviene si el pegado no cambió nada. No interviene en editores de texto enriquecido ni de código, que manejan el pegado por su cuenta; ahí se usa el atajo.
 * **Configuración:** Al hacer clic en el ícono de la extensión se elige:
   * **Pegar con:** una tecla (botón *Cambiar tecla* y presionar la deseada) o el botón central del mouse (rueda), que pega en el cuadro de texto donde se hace clic.
   * **Presionar 2 veces rápido para pegar:** si está desmarcado, basta una pulsación.
+  * **Forzar Ctrl+V donde no dejan pegar:** activado por defecto; al desmarcarlo, `Ctrl+V` vuelve a respetar los bloqueos de las páginas (el atajo sigue pegando siempre).
 * **Oculta el aviso de Bing Maps:** En Omnitracs elimina la barra "The specified credentials are invalid..." que aparece a mitad del mapa.
 * **Sitios compatibles:** Omnitracs (`*.omnitracs.com`), Traffilog (`mx.traffilog.com`) y Google Maps (`google.com/maps`, `google.com.mx/maps`).
 * **Acción Dinámica (Clic Inteligente):**
@@ -24,7 +26,7 @@ Este es un plugin ligero para Google Chrome (Manifest V3) diseñado para extraer
 GPS-Coordinates-Extractor/
 ├── manifest.json   # Configuración de permisos y reglas (Manifest V3)
 ├── content.js      # Copiado de coordenadas (Omnitracs, Traffilog y Google Maps)
-├── pegar.js        # Pegado del portapapeles con tecla o rueda del mouse (todas las páginas)
+├── pegar.js        # Pegado con tecla o rueda del mouse y desbloqueo de Ctrl+V (todas las páginas)
 ├── configuracion.js  # Configuración predeterminada del pegado
 ├── opciones.html   # Ventana de configuración (ícono de la extensión)
 ├── opciones.js     # Lógica de la ventana de configuración

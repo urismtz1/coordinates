@@ -1,7 +1,10 @@
 // Pegar el portapapeles en el cuadro de texto actual con una tecla o con el botón central del mouse.
 // La tecla, el botón y si hay que pulsar 2 veces se eligen en la configuración (opciones.html);
-// los valores predeterminados están en configuracion.js
+// los valores predeterminados están en configuracion.js.
+// Se carga al inicio de la página (document_start) para escuchar antes que ella: así la página
+// no puede bloquear el pegado
 const TIEMPO_DOBLE_PULSACION = 500; // ms máximos entre las 2 pulsaciones
+const ESPERA_PEGADO_BLOQUEADO = 50; // ms que se le dan a la página para pegar antes de revisar si lo bloqueó
 const CODIGOS_MODIFICADORES = ['ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'ShiftLeft', 'ShiftRight', 'MetaLeft', 'MetaRight'];
 
 let configPegado = { ...CONFIG_PREDETERMINADA };
@@ -9,6 +12,8 @@ let teclaPresionada = false;
 let pulsacionLimpia = false;
 let bloquearTecla = false;
 let ultimaPulsacion = 0;
+let leyendoPortapapeles = false;
+let textoLeido = '';
 
 function cargarConfigPegado() {
     chrome.storage.sync.get(CONFIG_PREDETERMINADA, guardada => { configPegado = guardada; });
@@ -87,6 +92,66 @@ function registrarPulsacion() {
     return false;
 }
 
+// --- Desbloqueo de Ctrl+V (y de "Pegar" en el menú del clic derecho) ---
+// Primero se deja que la página pegue a su manera (por ejemplo, repartir un código en varios
+// cuadros); solo si lo bloqueó, se escribe el texto como si se tecleara
+window.addEventListener('paste', function(event) {
+    if (leyendoPortapapeles) {
+        // Pegado propio (leerPortapapeles): se toma el texto y la página no llega a ver el evento
+        textoLeido = event.clipboardData.getData('text/plain');
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+    }
+
+    const campo = event.composedPath()[0];
+    if (!configPegado.desbloquearPegado || !event.isTrusted || !esCuadroComun(campo)) return;
+
+    // La página canceló el pegado o lo deshizo: el cuadro quedó igual que antes
+    const texto = event.clipboardData.getData('text/plain');
+    const antes = estadoDelCuadro(campo);
+    setTimeout(() => {
+        if (estadoDelCuadro(campo) === antes && obtenerCampoActual() === campo) escribirTexto(campo, texto);
+    }, ESPERA_PEGADO_BLOQUEADO);
+}, true);
+
+window.addEventListener('keydown', function(event) {
+    const campo = event.composedPath()[0];
+    if (!configPegado.desbloquearPegado || !event.isTrusted || !esAtajoDePegar(event) || !esCuadroComun(campo)) return;
+
+    // La página canceló Ctrl+V, así que el navegador ni siquiera intentó pegar
+    setTimeout(() => {
+        if (event.defaultPrevented && obtenerCampoActual() === campo) pegarEn(campo);
+    }, ESPERA_PEGADO_BLOQUEADO);
+}, true);
+
+// Ctrl+V, Ctrl+Shift+V, Cmd+V o Shift+Insert
+function esAtajoDePegar(event) {
+    const tecla = (event.key || '').toLowerCase();
+    if (event.altKey) return false; // AltGr+V es otra combinación
+    return ((event.ctrlKey || event.metaKey) && tecla === 'v') ||
+        (event.shiftKey && !event.ctrlKey && tecla === 'insert');
+}
+
+// Cuadro de texto común. Los editores de código en el navegador usan un cuadro invisible
+// y pegan a su manera, así que en ellos no se interviene
+function esCuadroComun(campo) {
+    if (!esCampoDeTexto(campo) || campo.isContentEditable || campo.readOnly || campo.disabled) return false;
+
+    const caja = campo.getBoundingClientRect();
+    const estilo = getComputedStyle(campo);
+    return caja.width >= 10 && caja.height >= 10 && estilo.opacity !== '0' && estilo.color !== 'rgba(0, 0, 0, 0)';
+}
+
+// Texto y posición del cursor, para saber si el pegado cambió algo
+function estadoDelCuadro(campo) {
+    try {
+        return `${campo.selectionStart},${campo.selectionEnd}|${campo.value}`;
+    } catch (err) {
+        return campo.value; // Los cuadros email y number no dejan leer el cursor
+    }
+}
+
 function obtenerCampoActual() {
     let campo = document.activeElement;
     // Si el foco está dentro de un componente con Shadow DOM, bajar hasta el campo real
@@ -108,8 +173,27 @@ function campoBajoElCursor(event) {
 
 function pegarEn(campo) {
     if (!campo) return;
-    // Igual que Ctrl+V: la página recibe el pegado normal (requiere el permiso clipboardRead)
-    if (!document.execCommand('paste')) {
+    escribirTexto(campo, leerPortapapeles());
+}
+
+// Lee el texto con un pegado propio que la página no ve, así no lo puede bloquear
+// (requiere el permiso clipboardRead)
+function leerPortapapeles() {
+    leyendoPortapapeles = true;
+    textoLeido = '';
+    try {
+        document.execCommand('paste');
+    } finally {
+        leyendoPortapapeles = false;
+    }
+    return textoLeido;
+}
+
+// Escribe el texto como si se tecleara: la página recibe el evento input de siempre
+// (React, Angular, etc. lo registran) y no lo distingue de un pegado para bloquearlo
+function escribirTexto(campo, texto) {
+    if (!texto) return;
+    if (!document.execCommand('insertText', false, texto)) {
         console.error("No se pudo pegar el portapapeles");
     }
 }

@@ -11,3 +11,7 @@
     El banner missingCredential ahora se oculta con CSS (ocultar-aviso-bing.css) en lugar del observador
     Se agrega el pegado del portapapeles en cualquier página con una tecla (AltGr por defecto, 2 pulsaciones rápidas) o con el botón central del mouse
     Se agrega una ventana de configuración desde el ícono de la extensión para elegir la tecla, el mouse y la doble pulsación
+2.2 El atajo de pegado (tecla o rueda del mouse) escribe el texto como si se tecleara, así la página no lo puede bloquear
+    Se desbloquea Ctrl+V, Shift+Insert y Pegar del clic derecho en los cuadros de texto donde la página no deja pegar
+    Se agrega la opción "Forzar Ctrl+V donde no dejan pegar" en la configuración (activada por defecto)
+    El pegado se carga al inicio de la página y también en recuadros (iframes) sin dirección, como algunos editores de correo
