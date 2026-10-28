@@ -16,3 +16,8 @@
     Se agrega la opción "Forzar Ctrl+V donde no dejan pegar" en la configuración (activada por defecto)
     El pegado se carga al inicio de la página y también en recuadros (iframes) sin dirección, como algunos editores de correo
 2.3 El atajo de pegado ahora funciona en campos dentro de componentes con Shadow DOM cerrado
+2.4 Se quita la opción "Forzar Ctrl+V donde no dejan pegar": el pegado forzado queda siempre activo
+    El Ctrl+V forzado ahora funciona en cualquier cuadro de texto: simples, editores de texto enriquecido, iframes y Shadow DOM (abierto o cerrado)
+    Se corrige el error "Cannot read properties of undefined (reading openOrClosedShadowRoot)" en pestañas que quedaron abiertas al recargar la extensión
+    El atajo de pegado entrega a la página un pegado con el texto (como Ctrl+V) para que lo maneje a su manera; así funciona en Google Sheets y Docs, y si nadie lo atiende o la página lo bloquea se escribe el texto de todas formas
+    Si la página no deja leer el portapapeles desde el cuadro (ej. Google Docs), se lee en un documento oculto de la extensión (segundo-plano.js, portapapeles.html)

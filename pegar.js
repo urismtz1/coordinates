@@ -5,6 +5,7 @@
 // no puede bloquear el pegado
 const TIEMPO_DOBLE_PULSACION = 500; // ms máximos entre las 2 pulsaciones
 const ESPERA_PEGADO_BLOQUEADO = 50; // ms que se le dan a la página para pegar antes de revisar si lo bloqueó
+const ESPERA_PEGADO_EDITOR = 200; // los editores de texto enriquecido pueden tardar más en pegar a su manera
 const CODIGOS_MODIFICADORES = ['ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'ShiftLeft', 'ShiftRight', 'MetaLeft', 'MetaRight'];
 
 let configPegado = { ...CONFIG_PREDETERMINADA };
@@ -93,6 +94,7 @@ function registrarPulsacion() {
 }
 
 // --- Desbloqueo de Ctrl+V (y de "Pegar" en el menú del clic derecho) ---
+// Siempre activo y en cualquier cuadro de texto: simple, editor, dentro de iframes o de Shadow DOM.
 // Primero se deja que la página pegue a su manera (por ejemplo, repartir un código en varios
 // cuadros); solo si lo bloqueó, se escribe el texto como si se tecleara
 window.addEventListener('paste', function(event) {
@@ -104,25 +106,28 @@ window.addEventListener('paste', function(event) {
         return;
     }
 
-    const campo = event.composedPath()[0];
-    if (!configPegado.desbloquearPegado || !event.isTrusted || !esCuadroComun(campo)) return;
+    const campo = obtenerCampoActual();
+    if (!event.isTrusted || !esCampoForzable(campo)) return;
 
     // La página canceló el pegado o lo deshizo: el cuadro quedó igual que antes
     const texto = event.clipboardData.getData('text/plain');
     const antes = estadoDelCuadro(campo);
     setTimeout(() => {
         if (estadoDelCuadro(campo) === antes && obtenerCampoActual() === campo) escribirTexto(campo, texto);
-    }, ESPERA_PEGADO_BLOQUEADO);
+    }, esperaDePegado(campo));
 }, true);
 
 window.addEventListener('keydown', function(event) {
-    const campo = event.composedPath()[0];
-    if (!configPegado.desbloquearPegado || !event.isTrusted || !esAtajoDePegar(event) || !esCuadroComun(campo)) return;
+    if (!event.isTrusted || !esAtajoDePegar(event)) return;
+    const campo = obtenerCampoActual();
+    if (!esCampoForzable(campo)) return;
 
     // La página canceló Ctrl+V, así que el navegador ni siquiera intentó pegar
+    // (si el cuadro cambió, la página pegó por su cuenta)
+    const antes = estadoDelCuadro(campo);
     setTimeout(() => {
-        if (event.defaultPrevented && obtenerCampoActual() === campo) pegarEn(campo);
-    }, ESPERA_PEGADO_BLOQUEADO);
+        if (event.defaultPrevented && estadoDelCuadro(campo) === antes && obtenerCampoActual() === campo) pegarEn(campo);
+    }, esperaDePegado(campo));
 }, true);
 
 // Ctrl+V, Ctrl+Shift+V, Cmd+V o Shift+Insert
@@ -133,18 +138,25 @@ function esAtajoDePegar(event) {
         (event.shiftKey && !event.ctrlKey && tecla === 'insert');
 }
 
-// Cuadro de texto común. Los editores de código en el navegador usan un cuadro invisible
-// y pegan a su manera, así que en ellos no se interviene
-function esCuadroComun(campo) {
-    if (!esCampoDeTexto(campo) || campo.isContentEditable || campo.readOnly || campo.disabled) return false;
+// Cualquier cuadro de texto editable y visible. Los editores de código, Google Docs y Sheets usan
+// un cuadro invisible (o un recuadro diminuto) y pegan a su manera, así que en ellos no se
+// interviene: ahí funciona el atajo
+function esCampoForzable(campo) {
+    if (!esCampoDeTexto(campo) || campo.readOnly || campo.disabled) return false;
+    if (window.innerWidth < 10 || window.innerHeight < 10) return false;
 
     const caja = campo.getBoundingClientRect();
     const estilo = getComputedStyle(campo);
     return caja.width >= 10 && caja.height >= 10 && estilo.opacity !== '0' && estilo.color !== 'rgba(0, 0, 0, 0)';
 }
 
+function esperaDePegado(campo) {
+    return campo.isContentEditable ? ESPERA_PEGADO_EDITOR : ESPERA_PEGADO_BLOQUEADO;
+}
+
 // Texto y posición del cursor, para saber si el pegado cambió algo
 function estadoDelCuadro(campo) {
+    if (campo.isContentEditable) return campo.innerHTML;
     try {
         return `${campo.selectionStart},${campo.selectionEnd}|${campo.value}`;
     } catch (err) {
@@ -179,18 +191,27 @@ function campoBajoElCursor(event) {
     return elemento;
 }
 
-// chrome.dom permite a la extensión ver también los Shadow DOM cerrados
+// chrome.dom permite a la extensión ver también los Shadow DOM cerrados. En una pestaña que quedó
+// abierta al recargar la extensión, chrome.dom ya no existe: ahí solo se ven los abiertos
 function raizDeSombra(elemento) {
-    return chrome.dom.openOrClosedShadowRoot(elemento);
+    return chrome.dom ? chrome.dom.openOrClosedShadowRoot(elemento) : elemento.shadowRoot;
 }
 
 function pegarEn(campo) {
     if (!campo) return;
-    escribirTexto(campo, leerPortapapeles());
+    const texto = leerPortapapeles();
+    if (texto) {
+        pegarTexto(campo, texto);
+    } else if (chrome.runtime && chrome.runtime.id) {
+        // Algunos cuadros invisibles no dejan leer el portapapeles desde ellos (ej. Google Docs):
+        // se lee en un documento oculto de la extensión (portapapeles.html)
+        chrome.runtime.sendMessage({ tipo: 'leer-portapapeles' }, textoAparte => {
+            if (textoAparte && obtenerCampoActual() === campo) pegarTexto(campo, textoAparte);
+        });
+    }
 }
 
-// Lee el texto con un pegado propio que la página no ve, así no lo puede bloquear
-// (requiere el permiso clipboardRead)
+// Lee el texto con un pegado propio que la página no ve (requiere el permiso clipboardRead)
 function leerPortapapeles() {
     leyendoPortapapeles = true;
     textoLeido = '';
@@ -202,10 +223,29 @@ function leerPortapapeles() {
     return textoLeido;
 }
 
+// Igual que Ctrl+V: la página recibe un pegado con el texto y lo maneja a su manera (Google Docs
+// y Sheets lo ponen en el documento o la celda). Si nadie lo atiende o la página lo bloquea,
+// se escribe el texto como si se tecleara
+function pegarTexto(campo, texto) {
+    const datos = new DataTransfer();
+    datos.setData('text/plain', texto);
+    const antes = estadoDelCuadro(campo);
+    const atendido = !campo.dispatchEvent(new ClipboardEvent('paste', {
+        clipboardData: datos, bubbles: true, cancelable: true, composed: true
+    }));
+
+    setTimeout(() => {
+        if (estadoDelCuadro(campo) !== antes || obtenerCampoActual() !== campo) return; // la página ya lo pegó
+        if (atendido && !esCampoForzable(campo)) return; // cuadro invisible: la página lo pegó a su manera
+        escribirTexto(campo, texto);
+    }, esperaDePegado(campo));
+}
+
 // Escribe el texto como si se tecleara: la página recibe el evento input de siempre
 // (React, Angular, etc. lo registran) y no lo distingue de un pegado para bloquearlo
 function escribirTexto(campo, texto) {
-    if (!texto) return;
+    // Algunos cuadros invisibles (ej. Google Docs) no aceptan texto escrito así; ahí la página ya pegó
+    if (!texto || !document.queryCommandEnabled('insertText')) return;
     if (!document.execCommand('insertText', false, texto)) {
         console.error("No se pudo pegar el portapapeles");
     }

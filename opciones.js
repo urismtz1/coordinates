@@ -17,7 +17,6 @@ const seccionTecla = document.getElementById('seccion-tecla');
 const nombreTecla = document.getElementById('nombre-tecla');
 const botonCambiar = document.getElementById('cambiar-tecla');
 const casillaDoble = document.getElementById('doble-pulsacion');
-const casillaDesbloquear = document.getElementById('desbloquear-pegado');
 const textoAyuda = document.getElementById('ayuda');
 const textoEstado = document.getElementById('estado');
 
@@ -38,7 +37,6 @@ function mostrarConfig() {
     seccionTecla.classList.toggle('inactiva', !usaTecla);
     botonCambiar.disabled = !usaTecla;
     casillaDoble.checked = configActual.doblePulsacion;
-    casillaDesbloquear.checked = configActual.desbloquearPegado;
     textoAyuda.textContent = usaTecla
         ? 'Pega en el cuadro de texto donde está el cursor. Evita letras, números, Enter o Tab: dejarían de escribirse en los cuadros de texto.'
         : 'Pega en el cuadro de texto donde haces clic con la rueda del mouse.';
@@ -58,7 +56,6 @@ radiosDisparador.forEach(radio => {
     radio.addEventListener('change', () => guardar({ disparador: radio.value }));
 });
 casillaDoble.addEventListener('change', () => guardar({ doblePulsacion: casillaDoble.checked }));
-casillaDesbloquear.addEventListener('change', () => guardar({ desbloquearPegado: casillaDesbloquear.checked }));
 
 // Elegir la tecla: la siguiente tecla que se presione pasa a ser la de pegado
 botonCambiar.addEventListener('click', () => {
