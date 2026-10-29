@@ -25,10 +25,23 @@ chrome.storage.onChanged.addListener((cambios, area) => {
     if (area === 'sync') cargarConfigPegado();
 });
 
+// Los listeners van en window, en fase de captura, para escuchar antes que la página. Algunas páginas
+// reescriben su documento con document.open/write (ej. los paneles de Apps Script en Google Sheets) y
+// eso borra los listeners: al ver el documento nuevo se vuelven a poner (agregarlos otra vez no los duplica)
+function escucharEventos() {
+    window.addEventListener('keydown', alPresionarTecla, true);
+    window.addEventListener('keyup', alSoltarTecla, true);
+    window.addEventListener('mousedown', alPresionarRueda, true);
+    window.addEventListener('paste', alPegar, true);
+    window.addEventListener('keydown', alPresionarCtrlV, true);
+}
+escucharEventos();
+new MutationObserver(escucharEventos).observe(document, { childList: true });
+
 // --- Disparador: tecla ---
 // Cuenta como pulsación presionar y soltar la tecla sola, para no estorbar
 // combinaciones como AltGr+Q (@) del teclado en español
-window.addEventListener('keydown', function(event) {
+function alPresionarTecla(event) {
     if (configPegado.disparador !== 'tecla') return;
 
     if (event.code === configPegado.codigoTecla) {
@@ -46,9 +59,9 @@ window.addEventListener('keydown', function(event) {
         pulsacionLimpia = false;
         ultimaPulsacion = 0;
     }
-}, true); // true = Fase de captura
+}
 
-window.addEventListener('keyup', function(event) {
+function alSoltarTecla(event) {
     if (configPegado.disparador !== 'tecla' || event.code !== configPegado.codigoTecla) return;
 
     const fuePulsacionSola = teclaPresionada && pulsacionLimpia;
@@ -60,7 +73,7 @@ window.addEventListener('keyup', function(event) {
         event.preventDefault();
         pegarEn(obtenerCampoActual());
     }
-}, true);
+}
 
 // Windows envía un Ctrl izquierdo junto con AltGr; no cuenta como otra tecla
 function esControlDeAltGr(event) {
@@ -69,7 +82,7 @@ function esControlDeAltGr(event) {
 
 // --- Disparador: botón central del mouse (rueda) ---
 // Pega en el cuadro de texto donde se hace clic con la rueda
-window.addEventListener('mousedown', function(event) {
+function alPresionarRueda(event) {
     if (configPegado.disparador !== 'mouse' || event.button !== 1) return;
 
     const campo = campoBajoElCursor(event);
@@ -78,7 +91,7 @@ window.addEventListener('mousedown', function(event) {
     event.preventDefault(); // Evita que la rueda active el desplazamiento automático
     campo.focus();
     if (registrarPulsacion()) pegarEn(campo);
-}, true);
+}
 
 // Devuelve true cuando ya se completaron las pulsaciones necesarias (1, o 2 rápidas)
 function registrarPulsacion() {
@@ -97,7 +110,7 @@ function registrarPulsacion() {
 // Siempre activo y en cualquier cuadro de texto: simple, editor, dentro de iframes o de Shadow DOM.
 // Primero se deja que la página pegue a su manera (por ejemplo, repartir un código en varios
 // cuadros); solo si lo bloqueó, se escribe el texto como si se tecleara
-window.addEventListener('paste', function(event) {
+function alPegar(event) {
     if (leyendoPortapapeles) {
         // Pegado propio (leerPortapapeles): se toma el texto y la página no llega a ver el evento
         textoLeido = event.clipboardData.getData('text/plain');
@@ -115,9 +128,9 @@ window.addEventListener('paste', function(event) {
     setTimeout(() => {
         if (estadoDelCuadro(campo) === antes && obtenerCampoActual() === campo) escribirTexto(campo, texto);
     }, esperaDePegado(campo));
-}, true);
+}
 
-window.addEventListener('keydown', function(event) {
+function alPresionarCtrlV(event) {
     if (!event.isTrusted || !esAtajoDePegar(event)) return;
     const campo = obtenerCampoActual();
     if (!esCampoForzable(campo)) return;
@@ -128,7 +141,7 @@ window.addEventListener('keydown', function(event) {
     setTimeout(() => {
         if (event.defaultPrevented && estadoDelCuadro(campo) === antes && obtenerCampoActual() === campo) pegarEn(campo);
     }, esperaDePegado(campo));
-}, true);
+}
 
 // Ctrl+V, Ctrl+Shift+V, Cmd+V o Shift+Insert
 function esAtajoDePegar(event) {
